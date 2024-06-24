@@ -1,15 +1,75 @@
 import { NextFunction, Request, Response } from "express";
 import bcrypt from "bcrypt";
 import User from "../models/entities/user";
-import { RegisteruserBody } from "../types";
+import { RegisterUserBody, LoginUserBody } from "../types";
 import { AppDataSource } from "../models";
 import wrapAsync from "../utils/asyncWrapper";
 import AppError from "../utils/customError";
+import jwt from "jsonwebtoken";
+import config from "../config ";
+
+export const getAccessToken = (id: string) => {
+  return jwt.sign({ id }, config.secret, { expiresIn: "1d" });
+};
+
+export const loginUser = wrapAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { email, password } = req.body as LoginUserBody;
+    if (!email || !password) {
+      throw new AppError("Missing Email or Password", 400);
+    }
+    const userRepository = AppDataSource.getRepository(User);
+    const foundUser = await userRepository.findOne({
+      where: {
+        email,
+      },
+    });
+    if (!foundUser) {
+      throw new AppError("No such user found", 400);
+    }
+    const isCorrect = await bcrypt.compare(password, foundUser.passsword);
+    if (!isCorrect) {
+      throw new AppError("Incorrect Password", 400);
+    }
+    // get token
+    const token = getAccessToken(foundUser.id);
+    // send http only cookie
+    res.cookie("token", token, {
+      path: "/",
+      httpOnly: true,
+      expires: new Date(Date.now() + 1000 * 86400), // 1 day
+      sameSite: "none",
+      secure: true,
+    });
+    return res.status(200).json({
+      id: foundUser.id,
+      name: foundUser.name,
+      email: foundUser.email,
+      photo: foundUser.photo,
+      phone: foundUser.phone,
+      bio: foundUser.bio,
+      token,
+    });
+  }
+);
+
+export const logoutUser = wrapAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    res.clearCookie("token", {
+      path: "/",
+      httpOnly: true,
+      expires: new Date(Date.now() + 1000 * 86400), // 1 day
+      sameSite: "none",
+      secure: true,
+    });
+    res.status(200).json({ message: "Logged out" });
+  }
+);
 
 export const registerUser = wrapAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { username, password, email, photo, bio, phone } =
-      req.body as RegisteruserBody;
+      req.body as RegisterUserBody;
     if (!username || !password || !email) {
       throw new AppError("Missing Details", 400);
     }
@@ -35,6 +95,24 @@ export const registerUser = wrapAsync(
     if (!savedUser) {
       throw new AppError("Could not save user!!", 400);
     }
-    return res.status(201);
+    // get token
+    const token = getAccessToken(savedUser.id);
+    // send http only cookie
+    res.cookie("token", token, {
+      path: "/",
+      httpOnly: true,
+      expires: new Date(Date.now() + 1000 * 86400), // 1 day
+      sameSite: "none",
+      secure: true,
+    });
+    return res.status(201).json({
+      id: savedUser.id,
+      name: savedUser.name,
+      email: savedUser.email,
+      photo: savedUser.photo,
+      phone: savedUser.phone,
+      bio: savedUser.bio,
+      token,
+    });
   }
 );
