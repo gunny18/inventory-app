@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import AppError from "../utils/customError";
+import config from "../config ";
 
 export const errorHandler = (
   err: AppError,
@@ -10,6 +11,6 @@ export const errorHandler = (
   const status = err.status;
   return res.status(status).json({
     error: err.message,
-    stack: process.env.NODE_ENV === "DEV" ? err.stack : null,
+    stack: config.env === "DEV" ? err.stack : null,
   });
 };
