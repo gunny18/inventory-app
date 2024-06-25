@@ -136,5 +136,29 @@ export const loginStatus = wrapAsync(
     const decoded = jwt.verify(token, config.secret) as CustomJwtPayload;
     if (!decoded) return res.json(false);
     res.json(true);
-  } 
+  }
+);
+
+export const updateUser = wrapAsync(
+  async (req: CustomRequest, res: Response, next: NextFunction) => {
+    const { username, email, photo, phone, bio } = req.body;
+    const userRepository = AppDataSource.getRepository(User);
+    const user = await userRepository.findOneBy({ id: req.user.id });
+    if (!user) throw new AppError("User not found", 400);
+    if (username) user.name = username;
+    if (email) user.email = email;
+    if (photo) user.photo = photo;
+    if (phone) user.phone = phone;
+    if (bio) user.bio = bio;
+    const updatedUser = await userRepository.save(user);
+    if (!updateUser) throw new AppError("Could not update user", 400);
+    return res.status(200).json({
+      id: updatedUser.id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      photo: updatedUser.photo,
+      phone: updatedUser.phone,
+      bio: updatedUser.bio,
+    });
+  }
 );

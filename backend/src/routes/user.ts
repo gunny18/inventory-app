@@ -1,6 +1,7 @@
 import express from "express";
 import {
   getCurrentUser,
+  loginStatus,
   loginUser,
   logoutUser,
   registerUser,
@@ -13,5 +14,6 @@ router
   .post("/register", registerUser)
   .post("/login", loginUser)
   .get("/logout", logoutUser)
-  .get("getUser", verifyAuthToken, getCurrentUser);
+  .get("/loginStatus", loginStatus)
+  .get("/getUser", verifyAuthToken, getCurrentUser);
 export default router;
