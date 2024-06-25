@@ -1,3 +1,6 @@
+import { Request } from "express";
+import { JwtPayload } from "jsonwebtoken";
+
 // Request body types
 export type RegisterUserBody = {
   username: string;
@@ -8,8 +11,25 @@ export type RegisterUserBody = {
   phone: string | null;
 };
 
+// Request user auth
+export type AuthUser = {
+  id: string;
+  username: string;
+  email: string;
+};
+
 // Request body login
 export type LoginUserBody = {
   email: string;
   password: string;
 };
+
+// JWT decoded type
+export interface CustomJwtPayload extends JwtPayload {
+  data: string;
+}
+
+// custom request with user
+export interface CustomRequest extends Request {
+  user: AuthUser;
+}

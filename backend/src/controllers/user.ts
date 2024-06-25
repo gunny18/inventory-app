@@ -1,7 +1,12 @@
 import { NextFunction, Request, Response } from "express";
 import bcrypt from "bcrypt";
 import User from "../models/entities/user";
-import { RegisterUserBody, LoginUserBody } from "../types";
+import {
+  RegisterUserBody,
+  LoginUserBody,
+  CustomRequest,
+  CustomJwtPayload,
+} from "../types";
 import { AppDataSource } from "../models";
 import wrapAsync from "../utils/asyncWrapper";
 import AppError from "../utils/customError";
@@ -9,7 +14,7 @@ import jwt from "jsonwebtoken";
 import config from "../config ";
 
 export const getAccessToken = (id: string) => {
-  return jwt.sign({ id }, config.secret, { expiresIn: "1d" });
+  return jwt.sign({ data: id }, config.secret, { expiresIn: "1d" });
 };
 
 export const loginUser = wrapAsync(
@@ -115,4 +120,21 @@ export const registerUser = wrapAsync(
       token,
     });
   }
+);
+
+export const getCurrentUser = wrapAsync(
+  async (req: CustomRequest, res: Response, next: NextFunction) => {
+    if (!req.user) throw new AppError("Unauthorized!", 401);
+    return res.status(200).json({ user: req.user });
+  }
+);
+
+export const loginStatus = wrapAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const token = req.cookies.token;
+    if (!token) return res.json(false);
+    const decoded = jwt.verify(token, config.secret) as CustomJwtPayload;
+    if (!decoded) return res.json(false);
+    res.json(true);
+  } 
 );
