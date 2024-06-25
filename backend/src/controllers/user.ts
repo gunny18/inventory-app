@@ -162,3 +162,9 @@ export const updateUser = wrapAsync(
     });
   }
 );
+
+export const forgotPassword = wrapAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    
+  }
+);
